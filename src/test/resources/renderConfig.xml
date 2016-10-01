@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<config>
+    <outputFileName>out.png</outputFileName>
+    <targetWidth>1500</targetWidth>
+    <bounds>
+        <east>10</east>
+        <west>20</west>
+        <north>-10</north>
+        <south>-20</south>
+    </bounds>
+    <groups>
+        <group>
+            <style type="circle">
+                <diameter>5</diameter>
+                <color>#770033</color>
+            </style>
+            <filter>
+                <or>
+                    <and>
+                        <weekDayIs>Monday</weekDayIs>
+                        <yearIs>2015</yearIs>
+                    </and>
+                    <monthIs>February</monthIs>
+                    <dateIsBetween>
+                        <start>27.03.</start>
+                        <end>7.8.</end>
+                    </dateIsBetween>
+                    <timeIsBetween>
+                        <start>07:00</start>
+                        <end>21:01</end>
+                    </timeIsBetween>
+                </or>
+            </filter>
+        </group>
+    </groups>
+</config>

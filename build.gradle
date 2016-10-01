@@ -1,0 +1,20 @@
+apply plugin: 'scala'
+
+repositories{
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies{
+    compile 'org.slf4j:slf4j-api:1.7.5'
+    compile 'org.scala-lang:scala-library:2.11.8'
+    compile 'org.scala-lang.modules:scala-xml_2.11:1.0.5'
+    compile 'com.sksamuel.scrimage:scrimage-core_2.11:2.1.0'
+    testCompile 'org.scalatest:scalatest_2.11:3.0.0'
+}
+
+task run(type: JavaExec, dependsOn: classes) {
+    main = 'Main'
+    classpath sourceSets.main.runtimeClasspath
+    classpath configurations.runtime
+}
