@@ -1,3 +1,5 @@
+package eu.kraml
+
 import java.io.File
 
 import com.sksamuel.scrimage.{Color, Image}
@@ -14,7 +16,7 @@ import scala.collection.mutable.ArrayBuffer
 object Main {
 
     def main(args: Array[String]): Unit = {
-        val mainConfig = MainConfigReader.readMainConfig("/home/jirka/tmp/gps/config.xml") //get path from commandline
+        val mainConfig = MainConfigReader.readMainConfig(args(1))
 
         val cache = new TileCache(mainConfig.cacheDir)
 

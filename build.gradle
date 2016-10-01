@@ -1,4 +1,7 @@
 apply plugin: 'scala'
+apply plugin: 'application'
+
+mainClassName = "eu.kraml.Main"
 
 repositories{
     mavenCentral()
@@ -13,8 +16,3 @@ dependencies{
     testCompile 'org.scalatest:scalatest_2.11:3.0.0'
 }
 
-task run(type: JavaExec, dependsOn: classes) {
-    main = 'Main'
-    classpath sourceSets.main.runtimeClasspath
-    classpath configurations.runtime
-}
