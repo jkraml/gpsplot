@@ -1,6 +1,6 @@
 package eu.kraml.model
 
-import eu.kraml.model.TileDescriptor.Position.Position
+import eu.kraml.model.TileDescriptor._
 
 import scala.math._
 
@@ -14,14 +14,14 @@ case class TileDescriptor(x: Int, y: Int, zoom: Int) {
 
     def coordinate(position: Position): GpsCoordinate = {
         val effectiveY = position.verticalPosition match {
-            case top => y
-            case middle => y + 0.5
-            case bottom => y + 1
+            case Top => y
+            case Middle => y + 0.5
+            case Bottom => y + 1
         }
         val effectiveX = position.horizontalPosition match {
-            case left => x
-            case center => x + 0.5
-            case right => x + 1
+            case Left => x
+            case Center => x + 0.5
+            case Right => x + 1
         }
 
         val n = math.pow(2.0, zoom)
@@ -33,29 +33,27 @@ case class TileDescriptor(x: Int, y: Int, zoom: Int) {
 }
 
 object TileDescriptor {
-    object Position {
-        sealed trait VerticalPosition
-        case object top extends VerticalPosition
-        case object middle extends VerticalPosition
-        case object bottom extends VerticalPosition
+    sealed trait VerticalPosition
+    case object Top extends VerticalPosition
+    case object Middle extends VerticalPosition
+    case object Bottom extends VerticalPosition
 
-        sealed trait HorizontalPosition
-        private case object left extends HorizontalPosition
-        private case object center extends HorizontalPosition
-        private case object right extends HorizontalPosition
+    sealed trait HorizontalPosition
+    case object Left extends HorizontalPosition
+    case object Center extends HorizontalPosition
+    case object Right extends HorizontalPosition
 
-        sealed abstract class Position(
-            val verticalPosition: VerticalPosition,
-            val horizontalPosition: HorizontalPosition
-        ) {}
-        case object topLeft extends Position(top, left)
-        case object topCenter extends Position(top, center)
-        case object topRight extends Position(top, right)
-        case object middleLeft extends Position(middle, left)
-        case object middleCenter extends Position(middle, center)
-        case object middleRight extends Position(middle, right)
-        case object bottomLeft extends Position(bottom, left)
-        case object bottomCenter extends Position(bottom, center)
-        case object bottomRight extends Position(bottom, right)
-    }
+    sealed abstract class Position(
+        val verticalPosition: VerticalPosition,
+        val horizontalPosition: HorizontalPosition
+    ) {}
+    case object TopLeft extends Position(Top, Left)
+    case object TopCenter extends Position(Top, Center)
+    case object TopRight extends Position(Top, Right)
+    case object MiddleLeft extends Position(Middle, Left)
+    case object MiddleCenter extends Position(Middle, Center)
+    case object MiddleRight extends Position(Middle, Right)
+    case object BottomLeft extends Position(Bottom, Left)
+    case object BottomCenter extends Position(Bottom, Center)
+    case object BottomRight extends Position(Bottom, Right)
 }
