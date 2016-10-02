@@ -1,5 +1,6 @@
 package eu.kraml.cli
 
+import eu.kraml.Main
 import eu.kraml.model.InvocationConfig
 
 object CLI {
@@ -10,6 +11,8 @@ object CLI {
         } catch {
             case e:IllegalStateException => sys.exit(1)
         }
+
+        Main.run(cmdLineConfig)
     }
 
     private def parseArgs(args: Array[String]): InvocationConfig = {
