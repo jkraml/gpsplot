@@ -12,6 +12,8 @@ import eu.kraml.model.Record
 
 object Main {
 
+    //TODO add logging
+
     def main(args: Array[String]): Unit = {
         val cmdLineConfig = try {
             parseArgs(args)

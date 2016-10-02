@@ -11,11 +11,13 @@ case class CmdLineConfig(rootConfig: File = null) {
 
 object CmdLineConfig {
     private val parser = new scopt.OptionParser[CmdLineConfig]("gpsplot") {
-        head("simple gps plotter")
+        override def showUsageOnError = true
 
-        arg[File]("<rootConfig>").action( (x,c) =>
-            c.copy(rootConfig = x)
+        arg[File]("<rootConfig>").text("root configuration file").action( (x,c) =>
+                c.copy(rootConfig = x)
         )
+
+        help("help").abbr("h")text("print this help text")
 
     }
 
