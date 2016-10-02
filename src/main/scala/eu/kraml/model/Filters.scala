@@ -1,7 +1,7 @@
 package eu.kraml.model
 
 import java.time.temporal.ChronoField._
-import java.time.{DayOfWeek, Month}
+import java.time.{DayOfWeek, Instant, Month}
 
 sealed trait RecordFilter {
     def recordMatches(record: Record): Boolean
@@ -67,7 +67,17 @@ object Filters {
         }
     }
 
-    //TODO introduce isBefore(Instant) and isAfter(Instant)
+    case class Before(instant: Instant) extends RecordFilter {
+        override def recordMatches(record: Record): Boolean = {
+            record.timestamp isBefore instant
+        }
+    }
+
+    case class After(instant: Instant) extends RecordFilter {
+        override def recordMatches(record: Record): Boolean = {
+            record.timestamp isAfter instant
+        }
+    }
 
     case class TimeIsBetween(startAsMinuteOfDay: Int, endAsMinuteOfDay: Int) extends RecordFilter {
         override def recordMatches(record: Record): Boolean = {

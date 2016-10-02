@@ -123,6 +123,14 @@ object RenderConfigReader {
                 val start = parseTimeAsMinuteOfDay(startString)
                 val end = parseTimeAsMinuteOfDay(endString)
                 TimeIsBetween(start, end)
+            case "isBefore" =>
+                val instantString = filter.text
+                val instant = Instant.parse(instantString)
+                Before(instant)
+            case "isAfter" =>
+                val instantString = filter.text
+                val instant = Instant.parse(instantString)
+                After(instant)
             case other =>
                 throw new IllegalArgumentException("unknown filter type "+other)
         }
