@@ -5,7 +5,7 @@ import java.time.Instant
 
 import eu.kraml.io.{GpxFileReader, MainConfigReader, RenderConfigReader, TileCache}
 import eu.kraml.model.{InvocationConfig, Record, RenderConfig}
-import eu.kraml.render.Renderer
+import eu.kraml.render.RenderingProcess
 
 import scala.collection.mutable
 
@@ -24,7 +24,7 @@ object Main {
         val renderConfigs: Map[String, (RenderConfig, Instant)]= readRenderConfigs(mainConfig.configDir)
         warnIfSameOutputFilesAreUsed(renderConfigs)
 
-        val renderer = new Renderer(cache, mainConfigModificationDate, mainConfig.outputDir, invocationConfig.forceRender)
+        val renderer = new RenderingProcess(cache, mainConfigModificationDate, mainConfig.outputDir, invocationConfig.forceRender)
 
         renderConfigs foreach {
             case (name, (conf, modDate)) =>
