@@ -21,9 +21,22 @@ object RenderConfigReader {
                                 filter: RecordFilter)
 
 
-    def readRenderConfig(configFile: String): RenderConfig = readRenderConfig(new File(configFile))
+    def readRenderConfig(configFile: String): Option[RenderConfig] = readRenderConfig(new File(configFile))
 
-    def readRenderConfig(configFile: File): RenderConfig = {
+    def readRenderConfig(configFile: File): Option[RenderConfig] = {
+        print("reading render config " + configFile.getPath + " ")
+        try {
+            val result = readRenderConfigInternal(configFile)
+            println("done")
+            Some(result)
+        } catch {
+            case e:Exception =>
+                println("failed")
+                None
+        }
+    }
+
+    private def readRenderConfigInternal(configFile: File): RenderConfig = {
         val conf = XML.loadFile(configFile)
         val outputFileName = (conf \ "outputFileName").text
         val targetWidthText = (conf \ "targetWidth").text

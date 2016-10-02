@@ -13,6 +13,7 @@ dependencies{
     compile 'org.scala-lang:scala-library:2.11.8'
     compile 'org.scala-lang.modules:scala-xml_2.11:1.0.5'
     compile 'com.sksamuel.scrimage:scrimage-core_2.11:2.1.0'
+    compile 'com.github.scopt:scopt_2.10:3.5.0'
     testCompile 'org.scalatest:scalatest_2.11:3.0.0'
 }
 

@@ -10,39 +10,19 @@ import eu.kraml.io.RenderConfigReader.RenderConfig
 import eu.kraml.io.{GpxFileReader, MainConfigReader, RenderConfigReader, TileCache}
 import eu.kraml.model.Record
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-
 object Main {
 
     def main(args: Array[String]): Unit = {
-        val mainConfig = MainConfigReader.readMainConfig(args(1))
+        val cmdLineConfig = try {
+            parseArgs(args)
+        } catch {
+            case e:IllegalStateException => sys.exit(1)
+        }
+        val mainConfig = MainConfigReader.readMainConfig(cmdLineConfig.rootConfig)
 
         val cache = new TileCache(mainConfig.cacheDir)
-
-        val records: ArrayBuffer[Record] = ArrayBuffer()
-        for (f <- mainConfig.dataDir.listFiles.filter(f => f.isFile && f.getName.endsWith(".gpx"))) {
-            try {
-                print("reading GPX file " + f.getPath + " ")
-                GpxFileReader.read(f).foreach(records.+=)
-                println("done")
-            } catch {
-                case e:Exception =>
-                    println("failed")
-            }
-        }
-
-        val renderConfigs: mutable.Map[String, RenderConfig]= mutable.HashMap.empty
-        for (f <- mainConfig.configDir.listFiles.filter(f => f.isFile && f.getName.endsWith(".xml")))
-            try {
-                print("reading render config " + f.getPath + " ")
-                renderConfigs += (f.getPath -> RenderConfigReader.readRenderConfig(f))
-                println("done")
-            } catch {
-                case e:Exception =>
-                    println("failed")
-                    e.printStackTrace()
-            }
+        val records: List[Record] = readGpxFiles(mainConfig.dataDir)
+        val renderConfigs: Map[String, RenderConfig]= readRenderConfigs(mainConfig.configDir)
 
         renderConfigs foreach {
             case (name, conf) =>
@@ -50,7 +30,30 @@ object Main {
                 val outfile = new File(mainConfig.outputDir, conf.outputFileName)
                 render(records, conf, cache).output(outfile)
         }
+    }
 
+    private def parseArgs(args: Array[String]): CmdLineConfig = {
+        CmdLineConfig.parse(args, CmdLineConfig()) match {
+            case Some(parsedConf) => parsedConf
+            case None => throw new IllegalStateException("config could not be parsed")
+        }
+    }
+
+    private def readGpxFiles(dataDir: File): List[Record] = {
+        dataDir.listFiles
+            .filter(f => f.isFile && f.getName.endsWith(".gpx"))
+            .map( GpxFileReader.read)
+            .flatMap(_.head)
+            .toList
+    }
+
+    private def readRenderConfigs(configDir: File): Map[String, RenderConfig] = {
+        configDir.listFiles
+            .filter(f => f.isFile && f.getName.endsWith(".xml"))
+            .flatMap( f =>
+                RenderConfigReader.readRenderConfig(f).map(c => f.getName->c)
+            )
+            .toMap
     }
 
     private def render(records: Iterable[Record], conf: RenderConfig, cache: TileCache): Image = {
@@ -58,11 +61,11 @@ object Main {
         //TODO filter points in group (date range)
         val bBox = conf.boundingBox
         val zoom = findZoom(bBox.width, conf.targetWidth)
-        println("chose zoom "+zoom)
+        println("chose zoom " + zoom)
         val mc = new MapCanvas(cache, bBox, zoom)
         val filteredCoords = records.map(_.coordinate).filter(bBox.contains).toList
         for ((coord,i) <- filteredCoords.zipWithIndex) {
-            println("rendering point "+i)
+            println("rendering point " + i)
             mc.addPoint(coord, Circle(10, Color.apply(255,0,0)))
         }
         mc.image
@@ -79,7 +82,7 @@ object Main {
             (z,error)
         }).toList
 
-        val sortedCandidates = candidates.sortBy(tuple => math.pow(tuple._2, 2)) // quadratic error
+        val sortedCandidates = candidates.sortBy {case (zoom, error) => math.pow(error, 2)} // quadratic error
 
         sortedCandidates.head._1
     }
