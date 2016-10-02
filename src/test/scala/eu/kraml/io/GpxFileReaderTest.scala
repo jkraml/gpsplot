@@ -13,13 +13,13 @@ class GpxFileReaderTest extends FlatSpec {
     behavior of "GpxFileReader"
 
     it should "parse points from minimal.gpx" in {
-        val records = GpxFileReader.read(minimalXml)
+        val records = GpxFileReader.read(minimalXml).head
 
         assert(records.size == 3)
     }
 
     it should "get coordinates from points in minimal.gpx" in {
-        val records = GpxFileReader.read(minimalXml)
+        val records = GpxFileReader.read(minimalXml).head
 
         assert(records(0).coordinate.latitude == 1.234567890)
         assert(records(0).coordinate.longitude == 101.234567890)
@@ -30,7 +30,7 @@ class GpxFileReaderTest extends FlatSpec {
     }
 
     it should "get timestamps from points in minimal.gpx" in {
-        val records = GpxFileReader.read(minimalXml)
+        val records = GpxFileReader.read(minimalXml).head
 
         assert(records(0).timestamp equals Instant.parse("2015-01-01T21:21:21Z"))
         assert(records(1).timestamp equals Instant.parse("2015-02-02T22:22:22Z"))

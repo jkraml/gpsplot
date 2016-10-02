@@ -15,7 +15,7 @@ class RenderConfigReaderTest extends FlatSpec {
     behavior of "RenderConfigReader"
 
     it should "parse bounds" in {
-        val config = RenderConfigReader.readRenderConfig(confXml)
+        val config = RenderConfigReader.readRenderConfig(confXml).head
 
         val bBox = config.boundingBox
         assert(bBox.north == -10)
@@ -25,7 +25,7 @@ class RenderConfigReaderTest extends FlatSpec {
     }
 
     it should "read point styles" in {
-        val config = RenderConfigReader.readRenderConfig(confXml)
+        val config = RenderConfigReader.readRenderConfig(confXml).head
 
         val firstGroup = config.groups(0)
 
@@ -33,7 +33,7 @@ class RenderConfigReaderTest extends FlatSpec {
     }
 
     it should "read filters" in {
-        val config = RenderConfigReader.readRenderConfig(confXml)
+        val config = RenderConfigReader.readRenderConfig(confXml).head
 
         val firstGroup = config.groups(0)
 
