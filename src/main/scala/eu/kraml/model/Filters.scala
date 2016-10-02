@@ -3,7 +3,7 @@ package eu.kraml.model
 import java.time.temporal.ChronoField._
 import java.time.{DayOfWeek, Month}
 
-sealed trait RecordFilter {
+trait RecordFilter {
     def filter(record: Record): Boolean
 }
 
