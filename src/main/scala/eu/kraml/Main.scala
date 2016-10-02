@@ -3,7 +3,7 @@ package eu.kraml
 import java.io.File
 import java.time.Instant
 
-import eu.kraml.Constants.{MAX_ZOOM, MIN_ZOOM}
+import eu.kraml.Constants.{MAX_ZOOM, MIN_ZOOM, TILE_WIDTH}
 import eu.kraml.img.MapCanvas
 import eu.kraml.img.MapCanvas.PointStyle
 import eu.kraml.io.{GpxFileReader, MainConfigReader, RenderConfigReader, TileCache}
@@ -108,19 +108,20 @@ object Main {
         instants.reduce((i1, i2) => {
             if (i1 isAfter i2)
                 i1
-            i2
+            else
+                i2
         })
     }
 
     private def findZoom(widthInDegrees: Double, targetWidthInPx: Int):Int = {
-        val targetWidthInTiles = targetWidthInPx / 256.0
-        val widthInPercentOfWorld = widthInDegrees/360.0
+        val targetWidthInTiles = targetWidthInPx / TILE_WIDTH
+        val widthInPercentOfWorld = widthInDegrees / 360.0
 
         val candidates: List[(Int, Double)] =
         (MIN_ZOOM to MAX_ZOOM).map(z => {
-            val width = math.pow(2,z)*256.0*widthInPercentOfWorld
-            val error = width-targetWidthInPx
-            (z,error)
+            val width = math.pow(2,z) * TILE_WIDTH * widthInPercentOfWorld
+            val error = width - targetWidthInPx
+            (z, error)
         }).toList
 
         val sortedCandidates = candidates.sortBy {case (zoom, error) => math.pow(error, 2)} // quadratic error
