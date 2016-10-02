@@ -1,7 +1,7 @@
 apply plugin: 'scala'
 apply plugin: 'application'
 
-mainClassName = "eu.kraml.Main"
+mainClassName = "eu.kraml.cli.CLI"
 
 repositories{
     mavenCentral()

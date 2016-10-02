@@ -1,4 +1,4 @@
-package eu.kraml
+package eu.kraml.cli
 
 import java.io.File
 

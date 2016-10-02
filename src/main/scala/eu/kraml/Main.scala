@@ -15,15 +15,10 @@ object Main {
 
     //TODO add logging
 
-    def main(args: Array[String]): Unit = {
-        val cmdLineConfig = try {
-            parseArgs(args)
-        } catch {
-            case e:IllegalStateException => sys.exit(1)
-        }
-        cmdLineConfig.assertConfigurationIsComplete()
-        val mainConfig = MainConfigReader.readMainConfig(cmdLineConfig.rootConfig)
-        val mainConfigModificationDate = Instant.ofEpochSecond(cmdLineConfig.rootConfig.lastModified())
+    def run(invocationConfig: InvocationConfig): Unit = {
+        invocationConfig.assertConfigurationIsComplete()
+        val mainConfig = MainConfigReader.readMainConfig(invocationConfig.rootConfig)
+        val mainConfigModificationDate = Instant.ofEpochSecond(invocationConfig.rootConfig.lastModified())
 
         val cache = new TileCache(mainConfig.cacheDir)
         val records: List[Record] = readGpxFiles(mainConfig.dataDir)
@@ -33,7 +28,7 @@ object Main {
         renderConfigs foreach {
             case (name, (conf, modDate)) =>
                 println("processing " + name)
-                render(records, conf, cache, mainConfig.outputDir, modDate, cmdLineConfig.forceRender)
+                render(records, conf, cache, mainConfig.outputDir, modDate, invocationConfig.forceRender)
         }
     }
 
@@ -52,13 +47,6 @@ object Main {
                     val filesString = configFiles.mkString(",")
                     println(s"Config files $filesString all write their output to $outFile" )
             })
-    }
-
-    private def parseArgs(args: Array[String]): InvocationConfig = {
-        CmdLineConfigParser.parse(args, InvocationConfig()) match {
-            case Some(parsedConf) => parsedConf
-            case None => throw new IllegalStateException("config could not be parsed")
-        }
     }
 
     private def readGpxFiles(dataDir: File): List[Record] = {
