@@ -1,13 +1,13 @@
-package eu.kraml.img
+package eu.kraml.render
 
 import java.awt.geom.Ellipse2D
 
+import com.sksamuel.scrimage.Image
 import com.sksamuel.scrimage.canvas.Canvas
-import com.sksamuel.scrimage.{Color, Image}
 import eu.kraml.Constants.{TILE_HEIGHT, TILE_WIDTH}
-import eu.kraml.img.MapCanvas._
 import eu.kraml.io.TileCache
-import eu.kraml.model.{BoundingBox, GpsCoordinate, TileDescriptor}
+import eu.kraml.model._
+import eu.kraml.render.MapCanvas._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.math.{ceil, floor}
@@ -81,9 +81,6 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
 }
 
 object MapCanvas {
-    sealed trait PointStyle
-    case class Circle(diameter: Int, color: Color) extends PointStyle
-
     private case class PxCoord(x: Int, y: Int)
 
     private sealed trait Glyph

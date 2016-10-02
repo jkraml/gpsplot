@@ -4,9 +4,8 @@ import java.io.File
 import java.time._
 
 import com.sksamuel.scrimage.Color
-import eu.kraml.img.MapCanvas.Circle
 import eu.kraml.model.Filters._
-import eu.kraml.model.{BoundingBox, PointGroupConfig, RecordFilter, RenderConfig}
+import eu.kraml.model._
 
 import scala.xml.{Node, NodeSeq, XML}
 

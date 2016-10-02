@@ -4,10 +4,9 @@ import java.io.File
 import java.time.Instant
 
 import eu.kraml.Constants.{MAX_ZOOM, MIN_ZOOM, TILE_WIDTH}
-import eu.kraml.img.MapCanvas
-import eu.kraml.img.MapCanvas.PointStyle
 import eu.kraml.io.{GpxFileReader, MainConfigReader, RenderConfigReader, TileCache}
-import eu.kraml.model.{InvocationConfig, Record, RenderConfig}
+import eu.kraml.model.{InvocationConfig, PointStyle, Record, RenderConfig}
+import eu.kraml.render.MapCanvas
 
 import scala.collection.mutable
 
@@ -72,7 +71,7 @@ object Main {
         val outfile = new File(outputDir, conf.outputFileName)
         val bBox = conf.boundingBox
         val recordsInBBox = records.filter(r => bBox.contains(r.coordinate)).toList
-        val recordsAndStyles = new mutable.ListBuffer[(List[Record],PointStyle)]()
+        val recordsAndStyles = new mutable.ListBuffer[(List[Record], PointStyle)]()
         var mostRecentRelevantDate = configModificationDate
 
         conf.groups.foreach( groupConf => {

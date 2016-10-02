@@ -5,7 +5,7 @@ import java.time.DayOfWeek.MONDAY
 import java.time.Month.{AUGUST, FEBRUARY, MARCH}
 
 import com.sksamuel.scrimage.Color
-import eu.kraml.img.MapCanvas.Circle
+import eu.kraml.model.Circle
 import eu.kraml.model.Filters._
 import org.scalatest.FlatSpec
 

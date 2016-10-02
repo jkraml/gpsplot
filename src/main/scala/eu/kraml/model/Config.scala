@@ -2,8 +2,7 @@ package eu.kraml.model
 
 import java.io.File
 
-import eu.kraml.img.MapCanvas.PointStyle
-
+import com.sksamuel.scrimage.Color
 
 case class InvocationConfig(rootConfig: File = null, forceRender: Boolean = false) {
     def assertConfigurationIsComplete(): Unit = {
@@ -25,4 +24,5 @@ case class RenderConfig(outputFileName: String,
 case class PointGroupConfig(style: PointStyle,
                             filter: RecordFilter)
 
-
+sealed trait PointStyle
+case class Circle(diameter: Int, color: Color) extends PointStyle
