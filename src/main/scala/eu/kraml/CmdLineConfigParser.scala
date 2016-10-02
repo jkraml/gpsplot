@@ -2,15 +2,10 @@ package eu.kraml
 
 import java.io.File
 
-case class CmdLineConfig(rootConfig: File = null, forceRender: Boolean = false) {
-    def assertConfigurationIsComplete(): Unit = {
-        if (rootConfig == null)
-            throw new IllegalStateException("root configuration path has not been set")
-    }
-}
+import eu.kraml.model.InvocationConfig
 
-object CmdLineConfig {
-    private val parser = new scopt.OptionParser[CmdLineConfig]("gpsplot") {
+object CmdLineConfigParser {
+    private val parser = new scopt.OptionParser[InvocationConfig]("gpsplot") {
         override def showUsageOnError = true
 
         opt[Unit]("force-render").abbr("f")
@@ -25,5 +20,5 @@ object CmdLineConfig {
         help("help").abbr("h").text("print this help text")
     }
 
-    def parse(args: Seq[String], init: CmdLineConfig) = parser.parse(args, init)
+    def parse(args: Seq[String], init: InvocationConfig) = parser.parse(args, init)
 }

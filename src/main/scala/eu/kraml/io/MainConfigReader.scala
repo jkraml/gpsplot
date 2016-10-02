@@ -2,6 +2,8 @@ package eu.kraml.io
 
 import java.io.File
 
+import eu.kraml.model.MainConfig
+
 import scala.xml.XML
 
 
@@ -32,11 +34,4 @@ object MainConfigReader {
 
         new File(root, path)
     }
-
-    case class MainConfig(
-                         dataDir: File,
-                         cacheDir: File,
-                         configDir: File,
-                         outputDir: File
-                         )
 }

@@ -4,24 +4,15 @@ import java.io.File
 import java.time._
 
 import com.sksamuel.scrimage.Color
-import eu.kraml.img.MapCanvas.{Circle, PointStyle}
+import eu.kraml.img.MapCanvas.Circle
 import eu.kraml.model.Filters._
-import eu.kraml.model.{BoundingBox, RecordFilter}
+import eu.kraml.model.{BoundingBox, PointGroupConfig, RecordFilter, RenderConfig}
 
 import scala.xml.{Node, NodeSeq, XML}
 
 //TODO add possibility to omit bounding box. In that case the bBox will be computed automatically from the data points
 
 object RenderConfigReader {
-
-    case class RenderConfig(outputFileName: String,
-                            targetWidth: Int,
-                            boundingBox: BoundingBox,
-                            groups: List[PointGroupConfig])
-
-    case class PointGroupConfig(style: PointStyle,
-                                filter: RecordFilter)
-
 
     def readRenderConfig(configFile: String): Option[RenderConfig] = readRenderConfig(new File(configFile))
 

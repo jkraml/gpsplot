@@ -6,9 +6,8 @@ import java.time.Instant
 import eu.kraml.Constants.{MAX_ZOOM, MIN_ZOOM}
 import eu.kraml.img.MapCanvas
 import eu.kraml.img.MapCanvas.PointStyle
-import eu.kraml.io.RenderConfigReader.RenderConfig
 import eu.kraml.io.{GpxFileReader, MainConfigReader, RenderConfigReader, TileCache}
-import eu.kraml.model.Record
+import eu.kraml.model.{InvocationConfig, Record, RenderConfig}
 
 import scala.collection.mutable
 
@@ -55,8 +54,8 @@ object Main {
             })
     }
 
-    private def parseArgs(args: Array[String]): CmdLineConfig = {
-        CmdLineConfig.parse(args, CmdLineConfig()) match {
+    private def parseArgs(args: Array[String]): InvocationConfig = {
+        CmdLineConfigParser.parse(args, InvocationConfig()) match {
             case Some(parsedConf) => parsedConf
             case None => throw new IllegalStateException("config could not be parsed")
         }
