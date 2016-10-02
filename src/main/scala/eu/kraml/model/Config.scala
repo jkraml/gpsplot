@@ -26,3 +26,4 @@ case class PointGroupConfig(style: PointStyle,
 
 sealed trait PointStyle
 case class Circle(diameter: Int, color: Color) extends PointStyle
+case class HeatMap() extends PointStyle

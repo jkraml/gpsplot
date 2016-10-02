@@ -3,6 +3,7 @@ package eu.kraml.render
 import java.io.File
 import java.time.Instant
 
+import com.sksamuel.scrimage.Image
 import eu.kraml.Constants._
 import eu.kraml.Main.ProgressMonitor
 import eu.kraml.io.TileCache
@@ -45,7 +46,7 @@ class RenderingProcess(val cache: TileCache, val mainConfigModificationDate: Ins
                 canvas.addRenderer(renderer, filteredRecords)
         }
 
-        canvas.render.output(outfile)
+        Image.fromAwt(canvas.render).output(outfile)
     }
 }
 

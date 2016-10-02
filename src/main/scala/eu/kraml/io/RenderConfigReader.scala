@@ -52,17 +52,25 @@ object RenderConfigReader {
     private val defaultGroupConfig = PointGroupConfig(Circle(5, Color.apply(255,0,0)), True())
 
     private def readPointGroupConfig(group: Node): PointGroupConfig = {
-        val styleNode = group \ "style"
-        val styleType = styleNode \@ "type"
-        val style = styleType match {
+        val style = readStyleConfig(group \ "style")
+        val filter = readFilterConfig(group \ "filter")
+        PointGroupConfig(style, filter)
+    }
+
+    private def readStyleConfig(styleNode: NodeSeq): PointStyle = {
+        if (styleNode.isEmpty) {
+            return Circle(5, Color.apply(255, 0, 0))
+        }
+        val styleType = styleNode.head \@ "type"
+        styleType match {
             case "circle" =>
                 val diameter = (styleNode \ "diameter").text.toDouble
                 val colorString = (styleNode \ "color").text
                 val color = readColor(colorString)
                 Circle(diameter.toInt, color)
+            case "heatmap" =>
+                HeatMap()
         }
-        val filter = readFilterConfig((group \ "filter").head)
-        PointGroupConfig(style, filter)
     }
 
     private val hexRgbPattern = "#([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})([0-9A-Fa-f]{2})".r
@@ -76,8 +84,11 @@ object RenderConfigReader {
         )
     }
 
-    private def readFilterConfig(filter: Node): RecordFilter = {
-        evaluateFilter((filter \ "_").head)
+    private def readFilterConfig(filter: NodeSeq): RecordFilter = {
+        if (filter.isEmpty)
+            True()
+        else
+            evaluateFilter((filter.head \ "_").head)
     }
 
     val simpleDate = "(\\d?\\d).(\\d?\\d).".r

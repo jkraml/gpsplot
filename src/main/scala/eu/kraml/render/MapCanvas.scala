@@ -1,6 +1,7 @@
 package eu.kraml.render
 
-import com.sksamuel.scrimage.Image
+import java.awt.image.BufferedImage
+
 import eu.kraml.Constants.{TILE_HEIGHT, TILE_WIDTH}
 import eu.kraml.Main.ProgressMonitor
 import eu.kraml.io.TileCache
@@ -19,7 +20,7 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
 
     private val renderers = new ListBuffer[(RecordRenderer, List[Record])]()
 
-    private def initMap()(implicit progress: ProgressMonitor): Image = {
+    private def initMap()(implicit progress: ProgressMonitor): BufferedImage = {
         val (maxXInTiles, maxYInTiles) = boundingBox.southEastCorner.toTileCoord(zoom)
 
         val widthInTiles = maxXInTiles - tileOffsetX
@@ -27,7 +28,7 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
 
         val widthInPx = (widthInTiles * TILE_WIDTH).toInt
         val heightInPx = (heightInTiles * TILE_HEIGHT).toInt
-        val map = Image.filled(widthInPx, heightInPx)
+        val map = new BufferedImage(widthInPx, heightInPx, BufferedImage.TYPE_4BYTE_ABGR)
 
         val drawingProcess = progress.registerProcess("drawing map tiles")
 
@@ -37,7 +38,7 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
         val maxY = ceil(maxYInTiles).toInt
         drawingProcess.setMaxValue((maxX-minX+1)*(maxY-minY+1))
 
-        val awtG = map.awt.createGraphics //use awt to modify image in place, because it's much faster
+        val awtG = map.createGraphics //use awt to modify image in place, because it's much faster
         for (x <- minX to maxX;
              y <- minY to maxY) {
             val pixelOffset = coordinateConverter.toCanvasCoords(x,y)
@@ -57,17 +58,19 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
         renderers.append((renderer, records))
     }
 
-    def render()(implicit progress: ProgressMonitor): Image = {
+    def render()(implicit progress: ProgressMonitor): BufferedImage = {
         val map = initMap()
 
-        val awtG = map.awt.createGraphics() //use awt to modify image in place, because it's much faster
-
+        //TODO decide how to combine renderers
         renderers.foreach {
-            case (renderer, records) =>
+            case (renderer:PixelBasedRecordRenderer, records) =>
+                renderer.render(map, coordinateConverter, records)
+            case (renderer:GraphicsBasedRecordRenderer, records) =>
+                val awtG = map.createGraphics()
                 renderer.render(awtG, coordinateConverter, records)
+                awtG.dispose()
         }
 
-        awtG.dispose()
         map
     }
 }
