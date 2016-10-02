@@ -1,11 +1,9 @@
 package eu.kraml.img
 
-import java.awt
 import java.awt.geom.Ellipse2D
 
 import com.sksamuel.scrimage.canvas.Canvas
 import com.sksamuel.scrimage.{Color, Image}
-import eu.kraml.Constants
 import eu.kraml.Constants.{TILE_HEIGHT, TILE_WIDTH}
 import eu.kraml.img.MapCanvas._
 import eu.kraml.io.TileCache
@@ -40,10 +38,8 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
              y <- floor(tileOffsetY).toInt to ceil(maxYInTiles).toInt) {
             val pixelOffset = toCanvasCoords(x,y)
             val tile = tileCache.get(new TileDescriptor(x,y,zoom))
-            println("drawing tile "+x+":"+y)
 
             awtG.drawImage(tile.awt, pixelOffset.x, pixelOffset.y, null)
-            //canvas = canvas.draw(DrawableImage(tile, pixelOffsetX, pixelOffsetY))
         }
         awtG.dispose()
     }
@@ -63,7 +59,7 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
         PxCoord(pxX, pxY)
     }
 
-    def image: Image = {
+    def render: Image = {
         val awtG = map.awt.createGraphics() //use awt to modify image in place, because it's much faster
         //TODO output some kind of progress message
         for (g <- glyphs) {

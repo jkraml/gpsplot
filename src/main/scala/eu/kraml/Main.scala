@@ -1,11 +1,11 @@
 package eu.kraml
 
 import java.io.File
+import java.time.Instant
 
-import com.sksamuel.scrimage.{Color, Image}
 import eu.kraml.Constants.{MAX_ZOOM, MIN_ZOOM}
 import eu.kraml.img.MapCanvas
-import eu.kraml.img.MapCanvas.Circle
+import eu.kraml.img.MapCanvas.PointStyle
 import eu.kraml.io.RenderConfigReader.RenderConfig
 import eu.kraml.io.{GpxFileReader, MainConfigReader, RenderConfigReader, TileCache}
 import eu.kraml.model.Record
@@ -24,24 +24,24 @@ object Main {
         }
         cmdLineConfig.assertConfigurationIsComplete()
         val mainConfig = MainConfigReader.readMainConfig(cmdLineConfig.rootConfig)
+        val mainConfigModificationDate = Instant.ofEpochSecond(cmdLineConfig.rootConfig.lastModified())
 
         val cache = new TileCache(mainConfig.cacheDir)
         val records: List[Record] = readGpxFiles(mainConfig.dataDir)
-        val renderConfigs: Map[String, RenderConfig]= readRenderConfigs(mainConfig.configDir)
+        val renderConfigs: Map[String, (RenderConfig, Instant)]= readRenderConfigs(mainConfig.configDir)
         warnIfSameOutputFilesAreUsed(renderConfigs)
 
         renderConfigs foreach {
-            case (name, conf) =>
+            case (name, (conf, modDate)) =>
                 println("processing " + name)
-                val outfile = new File(mainConfig.outputDir, conf.outputFileName)
-                render(records, conf, cache).output(outfile)
+                render(records, conf, cache, mainConfig.outputDir, modDate, cmdLineConfig.forceRender)
         }
     }
 
-    private def warnIfSameOutputFilesAreUsed(renderConfigs: Map[String, RenderConfig]): Unit = {
+    private def warnIfSameOutputFilesAreUsed(renderConfigs: Map[String, (RenderConfig, Instant)]): Unit = {
         val outputFileToConfigs = new mutable.HashMap[String, mutable.Set[String]] with mutable.MultiMap[String, String]
         renderConfigs.foreach {
-            case (confFile, config) => outputFileToConfigs.addBinding(config.outputFileName, confFile)
+            case (confFile, (config, modDate)) => outputFileToConfigs.addBinding(config.outputFileName, confFile)
         }
 
         outputFileToConfigs
@@ -70,30 +70,59 @@ object Main {
             .toList
     }
 
-    private def readRenderConfigs(configDir: File): Map[String, RenderConfig] = {
+    private def readRenderConfigs(configDir: File): Map[String, (RenderConfig, Instant)] = {
         configDir.listFiles
             .filter(f => f.isFile && f.getName.endsWith(".xml"))
-            .flatMap( f =>
-                RenderConfigReader.readRenderConfig(f).map(c => f.getName->c)
-            )
+            .flatMap( f => {
+                val modDate = Instant.ofEpochSecond(f.lastModified())
+                    RenderConfigReader.readRenderConfig(f).map(c => f.getName -> (c, modDate))
+            })
             .toMap
     }
 
-    private def render(records: Iterable[Record], conf: RenderConfig, cache: TileCache): Image = {
-        //TODO iterate over groups
-        //TODO filter points in group (date range)
-
-        //TODO check if most recent point or config file is newer than output file
-        // - if not, skip rendering (also add override ofr this check)
+    //TODO move render method to own class (use one instance for each output file)
+    private def render(records: Iterable[Record], conf: RenderConfig, cache: TileCache, outputDir: File, configModificationDate: Instant, forceRender: Boolean = true): Unit = {
+        val outfile = new File(outputDir, conf.outputFileName)
         val bBox = conf.boundingBox
+        val recordsInBBox = records.filter(r => bBox.contains(r.coordinate)).toList
+        val recordsAndStyles = new mutable.ListBuffer[(List[Record],PointStyle)]()
+        var mostRecentRelevantDate = configModificationDate
+
+        conf.groups.foreach( groupConf => {
+            val matchingRecords = recordsInBBox
+                .filter(groupConf.filter.recordMatches)
+            recordsAndStyles.append((matchingRecords, groupConf.style))
+
+            val newestRecordDate = matchingRecords.map(_.timestamp).sorted.reverse.head
+            mostRecentRelevantDate = mostRecent(mostRecentRelevantDate, newestRecordDate)
+        })
+
+        val lastRenderDate = Instant.ofEpochSecond(outfile.lastModified())
+        if (!forceRender && (mostRecentRelevantDate isBefore lastRenderDate)) {
+            println("nothing has changed since last rendering")
+            return
+        }
+
         val zoom = findZoom(bBox.width, conf.targetWidth)
         println("chose zoom " + zoom)
-        val mc = new MapCanvas(cache, bBox, zoom)
-        val filteredCoords = records.map(_.coordinate).filter(bBox.contains).toList
-        for ((coord,i) <- filteredCoords.zipWithIndex) {
-            mc.addPoint(coord, Circle(10, Color.apply(255,0,0)))
+        val canvas = new MapCanvas(cache, bBox, zoom)
+
+        recordsAndStyles.foreach {
+            case (filteredRecords, style) =>
+                filteredRecords
+                    .map(_.coordinate)
+                    .foreach(c => canvas.addPoint(c, style))
         }
-        mc.image
+
+        canvas.render.output(outfile)
+    }
+
+    private def mostRecent(instants: Instant*): Instant = {
+        instants.reduce((i1, i2) => {
+            if (i1 isAfter i2)
+                i1
+            i2
+        })
     }
 
     private def findZoom(widthInDegrees: Double, targetWidthInPx: Int):Int = {

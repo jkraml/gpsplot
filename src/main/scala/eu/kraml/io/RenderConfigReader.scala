@@ -53,8 +53,13 @@ object RenderConfigReader {
     }
 
     private def readPointGroupConfig(groupRoot: NodeSeq): List[PointGroupConfig] = {
-        (groupRoot \ "group").map(readPointGroupConfig).toList
+        if (groupRoot.isEmpty)
+            List(defaultGroupConfig)
+        else
+            (groupRoot \ "group").map(readPointGroupConfig).toList
     }
+
+    private val defaultGroupConfig = PointGroupConfig(Circle(5, Color.apply(255,0,0)), True())
 
     private def readPointGroupConfig(group: Node): PointGroupConfig = {
         val styleNode = group \ "style"
