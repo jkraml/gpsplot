@@ -10,6 +10,8 @@ import eu.kraml.io.RenderConfigReader.RenderConfig
 import eu.kraml.io.{GpxFileReader, MainConfigReader, RenderConfigReader, TileCache}
 import eu.kraml.model.Record
 
+import scala.collection.mutable
+
 object Main {
 
     //TODO add logging
@@ -20,13 +22,13 @@ object Main {
         } catch {
             case e:IllegalStateException => sys.exit(1)
         }
+        cmdLineConfig.assertConfigurationIsComplete()
         val mainConfig = MainConfigReader.readMainConfig(cmdLineConfig.rootConfig)
 
         val cache = new TileCache(mainConfig.cacheDir)
         val records: List[Record] = readGpxFiles(mainConfig.dataDir)
         val renderConfigs: Map[String, RenderConfig]= readRenderConfigs(mainConfig.configDir)
-
-        //TODO make sure each render config has a different output file
+        warnIfSameOutputFilesAreUsed(renderConfigs)
 
         renderConfigs foreach {
             case (name, conf) =>
@@ -34,6 +36,23 @@ object Main {
                 val outfile = new File(mainConfig.outputDir, conf.outputFileName)
                 render(records, conf, cache).output(outfile)
         }
+    }
+
+    private def warnIfSameOutputFilesAreUsed(renderConfigs: Map[String, RenderConfig]): Unit = {
+        val outputFileToConfigs = new mutable.HashMap[String, mutable.Set[String]] with mutable.MultiMap[String, String]
+        renderConfigs.foreach {
+            case (confFile, config) => outputFileToConfigs.addBinding(config.outputFileName, confFile)
+        }
+
+        outputFileToConfigs
+            .filter({
+                case (outFile, configFiles) => configFiles.size > 1
+            })
+            .foreach( {
+                case (outFile, configFiles) =>
+                    val filesString = configFiles.mkString(",")
+                    println(s"Config files $filesString all write their output to $outFile" )
+            })
     }
 
     private def parseArgs(args: Array[String]): CmdLineConfig = {
