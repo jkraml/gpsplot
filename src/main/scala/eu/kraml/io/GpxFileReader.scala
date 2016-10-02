@@ -19,14 +19,10 @@ object GpxFileReader {
     }
 
     def read(gpxFile: File): Option[List[Record]] = {
-        print("reading GPX file " + gpxFile.getPath + " ")
         try {
-            val result = readInternal(gpxFile)
-            println("done")
-            Some(result)
+            Some(readInternal(gpxFile))
         } catch {
             case e:Exception =>
-                println("failed")
                 None
         }
     }

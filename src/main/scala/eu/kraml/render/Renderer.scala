@@ -4,6 +4,7 @@ import java.io.File
 import java.time.Instant
 
 import eu.kraml.Constants._
+import eu.kraml.Main.ProgressMonitor
 import eu.kraml.io.TileCache
 import eu.kraml.model.{PointStyle, Record, RenderConfig}
 import eu.kraml.render.Renderer.{findZoom, mostRecent}
@@ -12,7 +13,8 @@ import scala.collection.mutable
 
 class Renderer(val cache: TileCache, val mainConfigModificationDate: Instant, val outputDir: File, var forceRender: Boolean = true) {
 
-    def render(records: Iterable[Record], conf: RenderConfig, configModificationDate: Instant): Unit = {
+    def render(records: Iterable[Record], conf: RenderConfig, configModificationDate: Instant)
+              (implicit progress: ProgressMonitor): Unit = {
         val outfile = new File(outputDir, conf.outputFileName)
         val bBox = conf.boundingBox
         val recordsInBBox = records.filter(r => bBox.contains(r.coordinate)).toList

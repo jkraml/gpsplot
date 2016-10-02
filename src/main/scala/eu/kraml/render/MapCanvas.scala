@@ -3,8 +3,8 @@ package eu.kraml.render
 import java.awt.geom.Ellipse2D
 
 import com.sksamuel.scrimage.Image
-import com.sksamuel.scrimage.canvas.Canvas
 import eu.kraml.Constants.{TILE_HEIGHT, TILE_WIDTH}
+import eu.kraml.Main.ProgressMonitor
 import eu.kraml.io.TileCache
 import eu.kraml.model._
 import eu.kraml.render.MapCanvas._
@@ -15,12 +15,11 @@ import scala.math.{ceil, floor}
 class MapCanvas(private val tileCache: TileCache, private val boundingBox: BoundingBox, private val zoom: Int) {
 
     private val (tileOffsetX, tileOffsetY) = boundingBox.northWestCorner.toTileCoord(zoom)
-    private val map = initMap
-    assembleMap()
+
 
     private var glyphs: ArrayBuffer[Glyph] = ArrayBuffer()
 
-    private def initMap:Canvas = {
+    private def initMap()(implicit progress: ProgressMonitor): Image = {
         val (maxXInTiles, maxYInTiles) = boundingBox.southEastCorner.toTileCoord(zoom)
 
         val widthInTiles = maxXInTiles - tileOffsetX
@@ -28,20 +27,30 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
 
         val widthInPx = (widthInTiles * TILE_WIDTH).toInt
         val heightInPx = (heightInTiles * TILE_HEIGHT).toInt
-        Image.filled(widthInPx, heightInPx)
-    }
+        val map = Image.filled(widthInPx, heightInPx)
 
-    private def assembleMap(): Unit = {
-        val (maxXInTiles, maxYInTiles) = boundingBox.southEastCorner.toTileCoord(zoom)
+        val drawingProcess = progress.registerProcess("drawing map tiles")
+
+        val minX = floor(tileOffsetX).toInt
+        val maxX = ceil(maxXInTiles).toInt
+        val minY = floor(tileOffsetY).toInt
+        val maxY = ceil(maxYInTiles).toInt
+        drawingProcess.setMaxValue((maxX-minX+1)*(maxY-minY+1))
+
         val awtG = map.awt.createGraphics //use awt to modify image in place, because it's much faster
-        for (x <- floor(tileOffsetX).toInt to ceil(maxXInTiles).toInt;
-             y <- floor(tileOffsetY).toInt to ceil(maxYInTiles).toInt) {
+        for (x <- minX to maxX;
+             y <- minY to maxY) {
             val pixelOffset = toCanvasCoords(x,y)
             val tile = tileCache.get(new TileDescriptor(x,y,zoom))
 
             awtG.drawImage(tile.awt, pixelOffset.x, pixelOffset.y, null)
+
+            drawingProcess << 1
         }
         awtG.dispose()
+        drawingProcess.indicateCompletion()
+
+        map
     }
 
     def addPoint(coordinate: GpsCoordinate, style: PointStyle): Unit = {
@@ -59,9 +68,12 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
         PxCoord(pxX, pxY)
     }
 
-    def render: Image = {
+    def render()(implicit progress: ProgressMonitor): Image = {
+        val map = initMap()
+
+        val drawingProcess = progress.registerProcess("rendering points")
+        drawingProcess.setMaxValue(glyphs.size)
         val awtG = map.awt.createGraphics() //use awt to modify image in place, because it's much faster
-        //TODO output some kind of progress message
         for (g <- glyphs) {
             g match {
                 case Point(center, style) =>
@@ -71,10 +83,12 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
                             val shape = new Ellipse2D.Double(center.x-r, center.y-r, dia, dia)
                             awtG.setColor(color.toAWT)
                             awtG.fill(shape)
+                            drawingProcess << 1
                     }
             }
         }
         awtG.dispose()
+        drawingProcess.indicateCompletion()
         map
     }
 

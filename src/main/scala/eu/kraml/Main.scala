@@ -13,7 +13,8 @@ object Main {
 
     //TODO add logging
 
-    def run(invocationConfig: InvocationConfig): Unit = {
+    def run(invocationConfig: InvocationConfig)
+           (implicit progress: ProgressMonitor = DummyProgressMonitor): Unit = {
         invocationConfig.assertConfigurationIsComplete()
         val mainConfig = MainConfigReader.readMainConfig(invocationConfig.rootConfig)
         val mainConfigModificationDate = Instant.ofEpochSecond(invocationConfig.rootConfig.lastModified())
@@ -24,6 +25,7 @@ object Main {
         warnIfSameOutputFilesAreUsed(renderConfigs)
 
         val renderer = new Renderer(cache, mainConfigModificationDate, mainConfig.outputDir, invocationConfig.forceRender)
+
         renderConfigs foreach {
             case (name, (conf, modDate)) =>
                 println("processing " + name)
@@ -48,12 +50,25 @@ object Main {
             })
     }
 
-    private def readGpxFiles(dataDir: File): List[Record] = {
-        dataDir.listFiles
-            .filter(f => f.isFile && f.getName.endsWith(".gpx"))
-            .map( GpxFileReader.read)
+    private def readGpxFiles(dataDir: File)
+                            (implicit progress: ProgressMonitor): List[Record] = {
+        val files = dataDir.listFiles
+            .filter(f => f.isFile && f.getName.endsWith(".gpx")).toList
+
+        val progressObserver = progress.registerProcess("loading gpx files")
+        progressObserver.setMaxValue(files.size)
+
+        val records = files
+            .map(GpxFileReader.read)
+            .map(e => {
+                progressObserver << 1
+                e
+            })
             .flatMap(_.head)
-            .toList
+
+        progressObserver.indicateCompletion()
+
+        records
     }
 
     private def readRenderConfigs(configDir: File): Map[String, (RenderConfig, Instant)] = {
@@ -66,4 +81,33 @@ object Main {
             .toMap
     }
 
+    trait ProgressMonitor {
+        def registerProcess(label: String): Progress
+    }
+
+    trait Progress {
+        def setMaxValue(maxValue: Integer): Unit
+        def indicateProgress(): Unit = indicateRelativeProgress(1)
+        def indicateAbsoluteProgress(newValue: Integer): Unit
+        def indicateRelativeProgress(delta: Integer): Unit
+        def <<(delta: Integer): Unit = indicateRelativeProgress(delta)
+        def indicateCompletion(): Unit
+    }
+
+    object DummyProgressMonitor extends ProgressMonitor {
+        override def registerProcess(label: String): Progress = DummyProgress
+
+        private object DummyProgress extends Progress {
+            override def setMaxValue(maxValue: Integer): Unit = {}
+
+            override def indicateProgress(): Unit = {}
+
+            override def indicateAbsoluteProgress(newValue: Integer): Unit = {}
+
+            override def indicateRelativeProgress(delta: Integer): Unit = {}
+
+            override def indicateCompletion(): Unit = {}
+        }
+
+    }
 }
