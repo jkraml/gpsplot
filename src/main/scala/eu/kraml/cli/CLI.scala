@@ -28,6 +28,8 @@ object CLI {
         }
     }
 
+    //TODO add super fancy CLI where progress is updated on the same line (instead of appended to output)
+
     private class SimplePrintingProgress(val label: String) extends Progress {
         private var currentValue = 0
         private var maxValue = 0
