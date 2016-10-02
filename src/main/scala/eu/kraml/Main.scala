@@ -26,6 +26,8 @@ object Main {
         val records: List[Record] = readGpxFiles(mainConfig.dataDir)
         val renderConfigs: Map[String, RenderConfig]= readRenderConfigs(mainConfig.configDir)
 
+        //TODO make sure each render config has a different output file
+
         renderConfigs foreach {
             case (name, conf) =>
                 println("processing " + name)
@@ -61,13 +63,15 @@ object Main {
     private def render(records: Iterable[Record], conf: RenderConfig, cache: TileCache): Image = {
         //TODO iterate over groups
         //TODO filter points in group (date range)
+
+        //TODO check if most recent point or config file is newer than output file
+        // - if not, skip rendering (also add override ofr this check)
         val bBox = conf.boundingBox
         val zoom = findZoom(bBox.width, conf.targetWidth)
         println("chose zoom " + zoom)
         val mc = new MapCanvas(cache, bBox, zoom)
         val filteredCoords = records.map(_.coordinate).filter(bBox.contains).toList
         for ((coord,i) <- filteredCoords.zipWithIndex) {
-            println("rendering point " + i)
             mc.addPoint(coord, Circle(10, Color.apply(255,0,0)))
         }
         mc.image

@@ -2,6 +2,8 @@ package eu.kraml
 
 import java.io.File
 
+//TODO add option for forcing a complete re-rendering of all files
+
 case class CmdLineConfig(rootConfig: File = null) {
     def assertConfigurationIsComplete(): Unit = {
         if (rootConfig == null)

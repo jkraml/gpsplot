@@ -10,6 +10,8 @@ import eu.kraml.model.{BoundingBox, RecordFilter}
 
 import scala.xml.{Node, NodeSeq, XML}
 
+//TODO add possibility to omit bounding box. In that case the bBox will be computed automatically from the data points
+
 object RenderConfigReader {
 
     case class RenderConfig(outputFileName: String,

@@ -65,6 +65,7 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
 
     def image: Image = {
         val awtG = map.awt.createGraphics() //use awt to modify image in place, because it's much faster
+        //TODO output some kind of progress message
         for (g <- glyphs) {
             g match {
                 case Point(center, style) =>
