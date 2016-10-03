@@ -20,12 +20,15 @@ private[render] class HeatMapRenderer() extends RecordRenderer {
             .groupBy(identity)
             .mapValues(_.size)
 
-        //TODO use some kind of 2D index structure for point weights, the iterations are very slow
+        //TODO use some kind of 2D index structure for point weights to replace the prefilter step
         val distanceCutoff = 80.0
         val exponent = 3
         for (y <- 0 until overlay.getHeight;
              x <- 0 until overlay.getWidth) {
             val weight = pointWeights
+                .filter({ //prefilter points which have a chance of being withing the distanceCutoff
+                    case (coord, count) => coord.x-x < distanceCutoff && coord.y-y < distanceCutoff
+                })
                 .map( {
                     case (coord, count) => (math.sqrt(math.pow(coord.x - x, 2) + math.pow(coord.y - y, 2)), count)
                 })
