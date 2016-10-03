@@ -1,33 +1,25 @@
 package eu.kraml.render
 
+import java.awt.Color
 import java.awt.geom.Ellipse2D
 import java.awt.image.BufferedImage
-import java.awt.{Color, Graphics2D}
 
 import eu.kraml.Main.ProgressMonitor
 import eu.kraml.model.{Circle, HeatMap, PointStyle, Record}
 
 trait RecordRenderer {
-
-}
-
-trait GraphicsBasedRecordRenderer extends RecordRenderer {
-    def render(awt: Graphics2D, coordinateConverter: CoordinateConverter, records: List[Record])
-              (implicit progress: ProgressMonitor): Unit
-}
-
-trait PixelBasedRecordRenderer extends RecordRenderer {
     def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
               (implicit progress: ProgressMonitor): Unit
 }
 
-class CircleRenderer(private val diameter: Int, private val color: Color) extends GraphicsBasedRecordRenderer {
+class CircleRenderer(private val diameter: Int, private val color: Color) extends RecordRenderer {
     private val radius = diameter/2.0
 
-    override def render(awt: Graphics2D, coordinateConverter: CoordinateConverter, records: List[Record])
+    override def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
                        (implicit progress: ProgressMonitor): Unit = {
 
-        awt.setColor(color)
+        val awtG = overlay.createGraphics()
+        awtG.setColor(color)
 
         val process = progress.registerProcess("rendering point")
         process.setMaxValue(records.size)
@@ -35,15 +27,16 @@ class CircleRenderer(private val diameter: Int, private val color: Color) extend
         records.foreach( r => {
             val center = coordinateConverter.toCanvasCoords(r.coordinate)
             val shape = new Ellipse2D.Double(center.x-radius, center.y-radius, diameter, diameter)
-            awt.fill(shape)
+            awtG.fill(shape)
             process << 1
         })
 
+        awtG.dispose()
         process.indicateCompletion()
     }
 }
 
-class HeatMapRenderer() extends PixelBasedRecordRenderer {
+class HeatMapRenderer() extends RecordRenderer {
     override def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
                        (implicit progress: ProgressMonitor): Unit = {
         val process = progress.registerProcess("rendering heatmap pixel")
