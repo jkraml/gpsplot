@@ -13,7 +13,7 @@ import scala.math.{ceil, floor}
 
 //TODO remove scrimmage lib
 
-class MapCanvas(private val tileCache: TileCache, private val boundingBox: BoundingBox, private val zoom: Int) {
+private[render] class MapCanvas(private val tileCache: TileCache, private val boundingBox: BoundingBox, private val zoom: Int) {
 
     private val (tileOffsetX, tileOffsetY) = boundingBox.northWestCorner.toTileCoord(zoom)
     private val coordinateConverter = new CoordinateConverter(zoom, tileOffsetX, tileOffsetY)
@@ -75,7 +75,7 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
     }
 }
 
-class CoordinateConverter(private val zoom: Int,
+private[render] class CoordinateConverter(private val zoom: Int,
                           private val tileOffsetX: Double,
                           private val tileOffsetY: Double) {
 
@@ -92,6 +92,6 @@ class CoordinateConverter(private val zoom: Int,
 
 }
 
-object MapCanvas {
+private[render] object MapCanvas {
     case class PxCoord(x: Int, y: Int)
 }

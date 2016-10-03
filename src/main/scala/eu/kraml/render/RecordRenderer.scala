@@ -7,12 +7,12 @@ import java.awt.image.BufferedImage
 import eu.kraml.Main.ProgressMonitor
 import eu.kraml.model.{Circle, HeatMap, PointStyle, Record}
 
-trait RecordRenderer {
+private[render] trait RecordRenderer {
     def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
               (implicit progress: ProgressMonitor): Unit
 }
 
-class CircleRenderer(private val diameter: Int, private val color: Color) extends RecordRenderer {
+private[render] class CircleRenderer(private val diameter: Int, private val color: Color) extends RecordRenderer {
     private val radius = diameter/2.0
 
     override def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
@@ -36,7 +36,7 @@ class CircleRenderer(private val diameter: Int, private val color: Color) extend
     }
 }
 
-class HeatMapRenderer() extends RecordRenderer {
+private[render] class HeatMapRenderer() extends RecordRenderer {
     override def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
                        (implicit progress: ProgressMonitor): Unit = {
         val process = progress.registerProcess("rendering heatmap pixel")
@@ -66,7 +66,7 @@ class HeatMapRenderer() extends RecordRenderer {
     }
 }
 
-object RecordRenderer {
+private[render] object RecordRenderer {
     def getRenderer(style: PointStyle): RecordRenderer =
         style match {
             case Circle(d, c) => new CircleRenderer(d, c.toAWT)

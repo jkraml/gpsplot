@@ -50,7 +50,7 @@ class RenderingProcess(val cache: TileCache, val mainConfigModificationDate: Ins
     }
 }
 
-object RenderingProcess {
+private[render] object RenderingProcess {
 
     private def mostRecent(instants: Instant*): Instant = {
         instants.reduce((i1, i2) => {
