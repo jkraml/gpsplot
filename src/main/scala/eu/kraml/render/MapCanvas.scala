@@ -62,9 +62,14 @@ class MapCanvas(private val tileCache: TileCache, private val boundingBox: Bound
         val map = initMap()
 
         //TODO decide how to combine renderers
+        //TODO use overlays for all renderers
         renderers.foreach {
             case (renderer:PixelBasedRecordRenderer, records) =>
-                renderer.render(map, coordinateConverter, records)
+                val overlay = new BufferedImage(map.getWidth, map.getHeight, BufferedImage.TYPE_4BYTE_ABGR)
+                renderer.render(overlay, coordinateConverter, records)
+                val awtG = map.createGraphics()
+                awtG.drawImage(overlay, 0, 0, null)
+                awtG.dispose()
             case (renderer:GraphicsBasedRecordRenderer, records) =>
                 val awtG = map.createGraphics()
                 renderer.render(awtG, coordinateConverter, records)

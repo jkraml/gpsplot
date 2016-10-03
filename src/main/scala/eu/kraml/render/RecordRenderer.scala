@@ -17,7 +17,7 @@ trait GraphicsBasedRecordRenderer extends RecordRenderer {
 }
 
 trait PixelBasedRecordRenderer extends RecordRenderer {
-    def render(image: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
+    def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
               (implicit progress: ProgressMonitor): Unit
 }
 
@@ -44,21 +44,28 @@ class CircleRenderer(private val diameter: Int, private val color: Color) extend
 }
 
 class HeatMapRenderer() extends PixelBasedRecordRenderer {
-    override def render(image: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
+    override def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
                        (implicit progress: ProgressMonitor): Unit = {
         val process = progress.registerProcess("rendering heatmap pixel")
-        process.setMaxValue(image.getWidth*image.getHeight)
+        process.setMaxValue(overlay.getWidth*overlay.getHeight)
 
-        //TODO use some kind of index structure, the iterations are very slow
-        for (y <- 0 until image.getHeight;
-             x <- 0 until image.getWidth) {
-            val dist = records.map(_.coordinate)
+        //TODO use some kind of index structure for records, the iterations are very slow
+        val distanceCutoff = 80.0
+        val exponent = 3
+        for (y <- 0 until overlay.getHeight;
+             x <- 0 until overlay.getWidth) {
+            val weight = records.map(_.coordinate)
                 .map(coordinateConverter.toCanvasCoords)
-                .map(c => math.sqrt(math.pow(c.x-x, 2)+math.pow(c.y-y, 2)))
-                .map(d => 1/(d+0.00001))
+                .map(c => math.sqrt(math.pow(c.x - x, 2) + math.pow(c.y - y, 2)))
+                .filter(_ < distanceCutoff)
+                .map {
+                    d  => (distanceCutoff-d)/distanceCutoff
+                }
+                .map (math.pow(_, exponent))
                 .sum
-            val color = new Color(math.min(dist, 255).toInt,0,0, 127)
-            image.setRGB(x,y,color.getRGB) //TODO fix this, it overwrites the map - we don't want that
+            val clipped = math.min(weight, 255).toInt
+            val color = new Color(255,0,0, clipped)
+            overlay.setRGB(x,y,color.getRGB)
             process << 1
         }
 
