@@ -25,7 +25,7 @@ object CLI {
         }
     }
 
-    //TODO make this class thread safe
+    //TODO refactor this class to make it both cleaner and thread safe
     private object FancyCliEventMonitor extends EventMonitor {
         private val messages = new mutable.Queue[String]
         private var lastPrintWasByProcess = false
