@@ -3,16 +3,16 @@ package eu.kraml.render
 import java.awt.Color
 import java.awt.image.BufferedImage
 
-import eu.kraml.Main.ProgressMonitor
+import eu.kraml.Main.EventMonitor
 import eu.kraml.model.Record
 import eu.kraml.render.MapCanvas.PxCoord
 
 
 private[render] class HeatMapRenderer() extends RecordRenderer {
     override def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
-                       (implicit progress: ProgressMonitor): Unit = {
-        val process = progress.registerProcess("rendering heatmap pixel")
-        process.setMaxValue(overlay.getWidth * overlay.getHeight)
+                       (implicit progress: EventMonitor): Unit = {
+        val process = progress.startProcess("rendering heatmap pixel")
+        process.setMaxProgressValue(overlay.getWidth * overlay.getHeight)
 
         val pointWeights: Map[PxCoord, Int] = records
             .map(_.coordinate)

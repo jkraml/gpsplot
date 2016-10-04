@@ -4,6 +4,7 @@ import java.io.File
 import java.time._
 
 import com.sksamuel.scrimage.Color
+import eu.kraml.Main.EventMonitor
 import eu.kraml.model.Filters._
 import eu.kraml.model._
 
@@ -13,17 +14,19 @@ import scala.xml.{Node, NodeSeq, XML}
 
 object RenderConfigReader {
 
-    def readRenderConfig(configFile: String): Option[RenderConfig] = readRenderConfig(new File(configFile))
+    def readRenderConfig(configFile: String)
+                        (implicit monitor: EventMonitor): Option[RenderConfig] = readRenderConfig(new File(configFile))
 
-    def readRenderConfig(configFile: File): Option[RenderConfig] = {
-        print("reading render config " + configFile.getPath + " ")
+    def readRenderConfig(configFile: File)
+                        (implicit monitor: EventMonitor): Option[RenderConfig] = {
+        monitor.printMessage("reading render config " + configFile.getPath + " ")
         try {
             val result = readRenderConfigInternal(configFile)
-            println("done")
+            monitor.printMessage("done")
             Some(result)
         } catch {
             case e:Exception =>
-                println("failed")
+                monitor.printMessage("failed")
                 None
         }
     }

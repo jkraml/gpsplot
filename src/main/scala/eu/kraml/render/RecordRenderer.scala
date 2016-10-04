@@ -4,25 +4,25 @@ import java.awt.Color
 import java.awt.geom.Ellipse2D
 import java.awt.image.BufferedImage
 
-import eu.kraml.Main.ProgressMonitor
+import eu.kraml.Main.EventMonitor
 import eu.kraml.model.{Circle, HeatMap, PointStyle, Record}
 
 private[render] trait RecordRenderer {
     def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
-              (implicit progress: ProgressMonitor): Unit
+              (implicit progress: EventMonitor): Unit
 }
 
 private[render] class CircleRenderer(private val diameter: Int, private val color: Color) extends RecordRenderer {
     private val radius = diameter/2.0
 
     override def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
-                       (implicit progress: ProgressMonitor): Unit = {
+                       (implicit progress: EventMonitor): Unit = {
 
         val awtG = overlay.createGraphics()
         awtG.setColor(color)
 
-        val process = progress.registerProcess("rendering point")
-        process.setMaxValue(records.size)
+        val process = progress.startProcess("rendering point")
+        process.setMaxProgressValue(records.size)
 
         records.foreach( r => {
             val center = coordinateConverter.toCanvasCoords(r.coordinate)

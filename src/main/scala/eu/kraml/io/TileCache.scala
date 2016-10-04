@@ -5,18 +5,22 @@ import java.net.URL
 import java.util.concurrent.TimeUnit
 
 import com.sksamuel.scrimage.Image
+import eu.kraml.Main.EventMonitor
 import eu.kraml.io.TileCache._
 import eu.kraml.model.TileDescriptor
-import sys.process._
 
+import scala.sys.process._
 import scala.util.Random
 
 //TODO add "soft" timeout for files
 //TODO make file timeout configurable
 
-class TileCache(private val cacheFolder: File) {
+class TileCache(private val cacheFolder: File)
+               (implicit eventMonitor: EventMonitor) {
     if (!cacheFolder.isDirectory)
         throw new IllegalArgumentException(s"'$cacheFolder' is not a folder")
+
+    private val monitor = eventMonitor
 
     def get(tileDescriptor: TileDescriptor): Image = {
         val tileFile = new File(cacheFolder, fileName(tileDescriptor))
@@ -36,7 +40,7 @@ class TileCache(private val cacheFolder: File) {
     }
 
     def download(tileDescriptor: TileDescriptor, tileFile: File) = {
-        stdout.println("downloading "+tileDescriptor)
+        monitor.printMessage("downloading "+tileDescriptor)
         // weird scala syntax to magically download stuff to a file
         downloadUrl(tileDescriptor) #> tileFile !!
     }

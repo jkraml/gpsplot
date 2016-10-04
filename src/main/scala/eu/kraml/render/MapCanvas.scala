@@ -3,7 +3,7 @@ package eu.kraml.render
 import java.awt.image.BufferedImage
 
 import eu.kraml.Constants.{TILE_HEIGHT, TILE_WIDTH}
-import eu.kraml.Main.ProgressMonitor
+import eu.kraml.Main.EventMonitor
 import eu.kraml.io.TileCache
 import eu.kraml.model._
 import eu.kraml.render.MapCanvas._
@@ -20,7 +20,7 @@ private[render] class MapCanvas(private val tileCache: TileCache, private val bo
 
     private val renderers = new ListBuffer[(RecordRenderer, List[Record])]()
 
-    private def initMap()(implicit progress: ProgressMonitor): BufferedImage = {
+    private def initMap()(implicit progress: EventMonitor): BufferedImage = {
         val (maxXInTiles, maxYInTiles) = boundingBox.southEastCorner.toTileCoord(zoom)
 
         val widthInTiles = maxXInTiles - tileOffsetX
@@ -30,13 +30,13 @@ private[render] class MapCanvas(private val tileCache: TileCache, private val bo
         val heightInPx = (heightInTiles * TILE_HEIGHT).toInt
         val map = new BufferedImage(widthInPx, heightInPx, BufferedImage.TYPE_4BYTE_ABGR)
 
-        val drawingProcess = progress.registerProcess("drawing map tiles")
+        val drawingProcess = progress.startProcess("drawing map tiles")
 
         val minX = floor(tileOffsetX).toInt
         val maxX = ceil(maxXInTiles).toInt
         val minY = floor(tileOffsetY).toInt
         val maxY = ceil(maxYInTiles).toInt
-        drawingProcess.setMaxValue((maxX-minX+1)*(maxY-minY+1))
+        drawingProcess.setMaxProgressValue((maxX-minX+1)*(maxY-minY+1))
 
         val awtG = map.createGraphics //use awt to modify image in place, because it's much faster
         for (x <- minX to maxX;
@@ -58,7 +58,7 @@ private[render] class MapCanvas(private val tileCache: TileCache, private val bo
         renderers.append((renderer, records))
     }
 
-    def render()(implicit progress: ProgressMonitor): BufferedImage = {
+    def render()(implicit progress: EventMonitor): BufferedImage = {
         val map = initMap()
 
         //TODO add xml describing how to combine renderers (alpha-blend, overlay), make sure the definition order is kept

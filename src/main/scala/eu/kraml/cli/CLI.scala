@@ -1,15 +1,12 @@
 package eu.kraml.cli
 
 import eu.kraml.Main
-import eu.kraml.Main.{Progress, ProgressMonitor}
+import eu.kraml.Main.{EventMonitor, Process}
 import eu.kraml.model.InvocationConfig
 
-object CLI {
+import scala.collection.mutable
 
-    //apparently has to be defined above main
-    implicit private object CliProgressMonitor extends ProgressMonitor {
-        override def registerProcess(label: String): Progress = new SimplePrintingProgress(label)
-    }
+object CLI {
 
     def main(args: Array[String]): Unit = {
         val cmdLineConfig = try {
@@ -18,7 +15,7 @@ object CLI {
             case e:IllegalStateException => sys.exit(1)
         }
 
-        Main.run(cmdLineConfig)
+        Main.run(cmdLineConfig)(FancyCliEventMonitor)
     }
 
     private def parseArgs(args: Array[String]): InvocationConfig = {
@@ -28,28 +25,64 @@ object CLI {
         }
     }
 
-    //TODO add super fancy CLI where progress is updated on the same line (instead of appended to output)
+    //TODO make this class thread safe
+    private object FancyCliEventMonitor extends EventMonitor {
+        private val messages = new mutable.Queue[String]
+        private var lastPrintWasByProcess = false
+        private var currentRunningProcess: Option[SimplePrintingProcess] = None
 
-    private class SimplePrintingProgress(val label: String) extends Progress {
-        private var currentValue = 0
-        private var maxValue = 0
+        override def startProcess(label: String): Process = new SimplePrintingProcess(label)
 
-        override def setMaxValue(maxValue: Integer): Unit =
-            this.maxValue = maxValue
-
-        override def indicateAbsoluteProgress(newValue: Integer): Unit = {
-            currentValue = newValue
-            print()
+        override def printMessage(text: String): Unit = {
+            messages += text
+            triggerOutput()
         }
 
-        override def indicateCompletion(): Unit = {}
-
-        override def indicateRelativeProgress(delta: Integer): Unit = {
-            currentValue += delta
-            print()
+        private def triggerOutput(): Unit = {
+            if (lastPrintWasByProcess) {
+                print("\r")
+            }
+            messages
+                .dequeueAll(_ => true)
+                .foreach(println)
+            currentRunningProcess match {
+                case Some(p) => printProcessProgress(p)
+                case _ =>
+            }
         }
 
-        def print(): Unit =
-            println(s"$label: $currentValue/$maxValue")
+        private def printProcessProgress(proc: SimplePrintingProcess): Unit = {
+            print(s"${proc.label}: ${proc.currentValue}/${proc.maxValue}")
+            lastPrintWasByProcess = true
+            currentRunningProcess = Some(proc)
+        }
+
+        private class SimplePrintingProcess(val label: String) extends Process {
+            var currentValue = 0
+            var maxValue = 0
+
+            override def setMaxProgressValue(maxValue: Integer): Unit =
+                this.maxValue = maxValue
+
+            override def indicateAbsoluteProgress(newValue: Integer): Unit = {
+                currentValue = newValue
+                currentRunningProcess = Some(this)
+                triggerOutput()
+            }
+
+            override def indicateCompletion(): Unit = {
+                currentRunningProcess = None
+                lastPrintWasByProcess = false
+                println
+            }
+
+            override def indicateRelativeProgress(delta: Integer): Unit = {
+                currentValue += delta
+                currentRunningProcess = Some(this)
+                triggerOutput()
+            }
+        }
     }
+
+
 }

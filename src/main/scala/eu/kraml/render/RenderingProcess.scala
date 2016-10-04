@@ -5,7 +5,7 @@ import java.time.Instant
 
 import com.sksamuel.scrimage.Image
 import eu.kraml.Constants._
-import eu.kraml.Main.ProgressMonitor
+import eu.kraml.Main.EventMonitor
 import eu.kraml.io.TileCache
 import eu.kraml.model.{PointStyle, Record, RenderConfig}
 import eu.kraml.render.RenderingProcess.{findZoom, mostRecent}
@@ -15,7 +15,7 @@ import scala.collection.mutable
 class RenderingProcess(val cache: TileCache, val mainConfigModificationDate: Instant, val outputDir: File, var forceRender: Boolean = true) {
 
     def render(records: Iterable[Record], conf: RenderConfig, configModificationDate: Instant)
-              (implicit progress: ProgressMonitor): Unit = {
+              (implicit monitor: EventMonitor): Unit = {
         val outfile = new File(outputDir, conf.outputFileName)
         val bBox = conf.boundingBox
         val recordsInBBox = records.filter(r => bBox.contains(r.coordinate)).toList
@@ -33,7 +33,7 @@ class RenderingProcess(val cache: TileCache, val mainConfigModificationDate: Ins
 
         val lastRenderDate = Instant.ofEpochSecond(outfile.lastModified()) //also covers the case where output file does not exist
         if (!forceRender && (mostRecentRelevantDate isBefore lastRenderDate)) {
-            println("nothing has changed since last rendering")
+            monitor.printMessage("nothing has changed since last rendering")
             return
         }
 

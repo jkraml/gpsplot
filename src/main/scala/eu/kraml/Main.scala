@@ -14,7 +14,7 @@ object Main {
     //TODO add logging
 
     def run(invocationConfig: InvocationConfig)
-           (implicit progress: ProgressMonitor = DummyProgressMonitor): Unit = {
+           (implicit monitor: EventMonitor = SimpleCliEventMonitor): Unit = {
         invocationConfig.assertConfigurationIsComplete()
         val mainConfig = MainConfigReader.readMainConfig(invocationConfig.rootConfig)
         val mainConfigModificationDate = Instant.ofEpochSecond(invocationConfig.rootConfig.lastModified())
@@ -28,12 +28,13 @@ object Main {
 
         renderConfigs foreach {
             case (name, (conf, modDate)) =>
-                println("processing " + name)
+                monitor.printMessage("processing " + name)
                 renderer.render(records, conf, modDate)
         }
     }
 
-    private def warnIfSameOutputFilesAreUsed(renderConfigs: Map[String, (RenderConfig, Instant)]): Unit = {
+    private def warnIfSameOutputFilesAreUsed(renderConfigs: Map[String, (RenderConfig, Instant)])
+                                            (implicit monitor: EventMonitor): Unit = {
         val outputFileToConfigs = new mutable.HashMap[String, mutable.Set[String]] with mutable.MultiMap[String, String]
         renderConfigs.foreach {
             case (confFile, (config, modDate)) => outputFileToConfigs.addBinding(config.outputFileName, confFile)
@@ -46,17 +47,18 @@ object Main {
             .foreach( {
                 case (outFile, configFiles) =>
                     val filesString = configFiles.mkString(",")
-                    println(s"Config files $filesString all write their output to $outFile" )
+                    monitor.printMessage(s"Config files $filesString all write their output to $outFile" )
+                    //TODO this is useless unless we quit
             })
     }
 
     private def readGpxFiles(dataDir: File)
-                            (implicit progress: ProgressMonitor): List[Record] = {
+                            (implicit monitor: EventMonitor): List[Record] = {
         val files = dataDir.listFiles
             .filter(f => f.isFile && f.getName.endsWith(".gpx")).toList
 
-        val progressObserver = progress.registerProcess("loading gpx files")
-        progressObserver.setMaxValue(files.size)
+        val progressObserver = monitor.startProcess("loading gpx files")
+        progressObserver.setMaxProgressValue(files.size)
 
         val records = files
             .map(GpxFileReader.read)
@@ -71,7 +73,8 @@ object Main {
         records
     }
 
-    private def readRenderConfigs(configDir: File): Map[String, (RenderConfig, Instant)] = {
+    private def readRenderConfigs(configDir: File)
+                                 (implicit monitor: EventMonitor): Map[String, (RenderConfig, Instant)] = {
         configDir.listFiles
             .filter(f => f.isFile && f.getName.endsWith(".xml"))
             .flatMap( f => {
@@ -81,12 +84,13 @@ object Main {
             .toMap
     }
 
-    trait ProgressMonitor {
-        def registerProcess(label: String): Progress
+    trait EventMonitor {
+        def startProcess(label: String): Process
+        def printMessage(text: String): Unit
     }
 
-    trait Progress {
-        def setMaxValue(maxValue: Integer): Unit
+    trait Process {
+        def setMaxProgressValue(maxValue: Integer): Unit
         def indicateProgress(): Unit = indicateRelativeProgress(1)
         def indicateAbsoluteProgress(newValue: Integer): Unit
         def indicateRelativeProgress(delta: Integer): Unit
@@ -94,20 +98,33 @@ object Main {
         def indicateCompletion(): Unit
     }
 
-    object DummyProgressMonitor extends ProgressMonitor {
-        override def registerProcess(label: String): Progress = DummyProgress
+    object SimpleCliEventMonitor extends EventMonitor {
+        override def startProcess(label: String): Process = new SimpleCliProcess(label)
 
-        private object DummyProgress extends Progress {
-            override def setMaxValue(maxValue: Integer): Unit = {}
+        override def printMessage(text: String): Unit = println(text)
 
-            override def indicateProgress(): Unit = {}
+        private class SimpleCliProcess(val label: String) extends Process {
+            private var currentValue = 0
+            private var maxValue = 0
 
-            override def indicateAbsoluteProgress(newValue: Integer): Unit = {}
+            override def setMaxProgressValue(maxValue: Integer): Unit =
+                this.maxValue = maxValue
 
-            override def indicateRelativeProgress(delta: Integer): Unit = {}
+            override def indicateAbsoluteProgress(newValue: Integer): Unit = {
+                currentValue = newValue
+                print()
+            }
 
             override def indicateCompletion(): Unit = {}
-        }
 
+            override def indicateRelativeProgress(delta: Integer): Unit = {
+                currentValue += delta
+                print()
+            }
+
+            def print(): Unit =
+                println(s"$label: $currentValue/$maxValue")
+        }
     }
+
 }
