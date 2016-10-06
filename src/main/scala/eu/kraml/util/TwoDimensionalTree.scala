@@ -76,7 +76,6 @@ object TwoDimensionalTree {
                               private val y: Int,
                               private val value: Value) extends Tree[Value] {
 
-        //does not check bounds
         override def get(bounds: BoundingBox): Stream[Value] = {
             if (bounds.overlaps(boundingBox))
                 Stream(value)
