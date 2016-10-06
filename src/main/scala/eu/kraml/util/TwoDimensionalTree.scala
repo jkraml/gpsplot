@@ -53,7 +53,7 @@ object TwoDimensionalTree {
 
     private class Node[Value](private val children: Seq[Tree[Value]]) extends Tree[Value] {
 
-        val boundingBox: BoundingBox = children.map(c => c.boundingBox).reduceLeft((a, b) => a combine b)
+        val boundingBox: BoundingBox = children.map(_.boundingBox).reduceLeft((a, b) => a combine b)
 
         override def get(bounds: BoundingBox): Stream[Value] = {
             if (bounds.contains(boundingBox))
