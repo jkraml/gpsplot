@@ -4,7 +4,7 @@ import java.io.File
 import java.time._
 
 import com.sksamuel.scrimage.Color
-import eu.kraml.Main.EventMonitor
+import eu.kraml.Main.{EventMonitor, SimpleCliEventMonitor}
 import eu.kraml.model.Filters._
 import eu.kraml.model._
 
@@ -18,7 +18,7 @@ object RenderConfigReader {
                         (implicit monitor: EventMonitor): Option[RenderConfig] = readRenderConfig(new File(configFile))
 
     def readRenderConfig(configFile: File)
-                        (implicit monitor: EventMonitor): Option[RenderConfig] = {
+                        (implicit monitor: EventMonitor = SimpleCliEventMonitor): Option[RenderConfig] = {
         monitor.printMessage("reading render config " + configFile.getPath + " ")
         try {
             val result = readRenderConfigInternal(configFile)
