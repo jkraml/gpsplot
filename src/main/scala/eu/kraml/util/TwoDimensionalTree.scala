@@ -5,10 +5,10 @@ import scala.math.{max, min}
 
 object TwoDimensionalTree {
 
-    class BoundingBox(private val minX: Int,
-                      private val maxX: Int,
-                      private val minY: Int,
-                      private val maxY: Int) {
+    case class BoundingBox(minX: Int,
+                           maxX: Int,
+                           minY: Int,
+                           maxY: Int) {
         if ((minX > maxX) || (minY > maxY))
             throw new IllegalArgumentException("invalid bounds")
 
@@ -26,6 +26,12 @@ object TwoDimensionalTree {
                 contains(this.minY, this.maxY, other.minY, other.maxY)
         }
 
+        def contains(point: (Int, Int)): Boolean = {
+            val (x, y) = point
+            contains(this.minX, this.maxX, x, x) &&
+                contains(this.minY, this.maxY, y, y)
+        }
+
         private def contains(thisMin: Int, thisMax: Int, otherMin: Int, otherMax: Int): Boolean = {
             (thisMin <= otherMin) && (otherMax <= thisMax)
         }
@@ -38,16 +44,54 @@ object TwoDimensionalTree {
                 max(this.maxY, other.maxY)
             )
         }
+
+        def include(point: (Int, Int)): BoundingBox = {
+            val (x, y) = point
+            new BoundingBox(
+                min(this.minX, x),
+                max(this.maxX, x),
+                min(this.minY, y),
+                max(this.maxY, y)
+            )
+        }
+
+        //TODO is there a better name?
+        def includeBorder(margin: Int): BoundingBox = {
+            new BoundingBox(
+                minX - margin,
+                maxX + margin,
+                minY - margin,
+                maxY + margin
+            )
+        }
+    }
+
+    object BoundingBox {
+        def around(values: Traversable[(Int, Int)]): BoundingBox = {
+            val (initX, initY) = values.head
+            val initBox = new BoundingBox(initX, initX, initY, initY)
+
+            values.foldLeft(initBox)(_ include _)
+        }
     }
 
     sealed trait Tree[Value] {
-        def get(bounds: BoundingBox): Stream[Value]
+        def get(bounds: BoundingBox): Stream[((Int, Int), Value)]
 
-        def getAll: Stream[Value]
+        def getValues(bounds: BoundingBox): Stream[Value] = {
+            get(bounds).map(_._2)
+        }
+
+        def getAll: Stream[((Int, Int), Value)]
+
+        def getAllValues: Stream[Value] = {
+            getAll.map(_._2)
+        }
 
         def boundingBox: BoundingBox
 
         def size: Int
+
         def height: Int
     }
 
@@ -55,7 +99,7 @@ object TwoDimensionalTree {
 
         val boundingBox: BoundingBox = children.map(_.boundingBox).reduceLeft((a, b) => a combine b)
 
-        override def get(bounds: BoundingBox): Stream[Value] = {
+        override def get(bounds: BoundingBox): Stream[((Int, Int), Value)] = {
             if (bounds.contains(boundingBox))
                 return getAll
 
@@ -65,44 +109,37 @@ object TwoDimensionalTree {
             children.flatMap(_.get(bounds)).toStream
         }
 
-        override def getAll: Stream[Value] = children.flatMap(_.getAll).toStream
+        override def getAll: Stream[((Int, Int), Value)] = children.flatMap(_.getAll).toStream
 
         override val size: Int = 1 + children.map(_.size).sum
 
         override val height: Int = 1 + children.map(_.height).max
     }
 
-    private class Leaf[Value](private val x: Int,
-                              private val y: Int,
-                              private val value: Value) extends Tree[Value] {
+    private class MultiLeaf[Value](values: Traversable[((Int, Int), Value)]) extends Tree[Value] {
+        override val boundingBox: BoundingBox = BoundingBox.around(values.map(_._1))
 
-        override def get(bounds: BoundingBox): Stream[Value] = {
-            if (bounds.overlaps(boundingBox))
-                Stream(value)
-            else
-                Stream.empty
-        }
+        override def get(bounds: BoundingBox): Stream[((Int, Int), Value)] =
+            values.filter(v => {
+                bounds.contains(v._1)
+            }).toStream
 
-        override def getAll: Stream[Value] = Stream(value)
+        override def getAll: Stream[((Int, Int), Value)] = values.toStream
 
-        override val boundingBox: BoundingBox = new BoundingBox(x, x, y, y)
+        override def size: Int = values.size
 
-        override val size: Int = 1
-
-        override val height: Int = 1
+        override def height: Int = 1
     }
 
     def makeTree[Value](collection: Traversable[((Int, Int), Value)]): Tree[Value] = {
-        if (collection.size == 1)
-            makeLeaf(collection.head)
+        if (collection.size <= 16)
+            makeMultiLeaf(collection)
         else
             makeNode(collection)
     }
 
-    private def makeLeaf[Value](record: ((Int, Int), Value)): Leaf[Value] = {
-        record match {
-            case ((x, y), v) => new Leaf[Value](x, y, v)
-        }
+    private def makeMultiLeaf[Value](collection: Traversable[((Int, Int), Value)]): Tree[Value] = {
+        new MultiLeaf[Value](collection)
     }
 
     private def makeNode[Value](collection: Traversable[((Int, Int), Value)]): Tree[Value] = {
@@ -110,10 +147,12 @@ object TwoDimensionalTree {
         val (ySplit, yScore) = getSplitValue(collection.map({ case ((x, y), v) => y }).toList)
 
         val filterFunc: (((Int, Int), Value)) => Boolean =
-            if (xScore > yScore)
-                { case (((x, y), v)) => x <= xSplit }
-            else
-                { case (((x, y), v)) => y <= ySplit }
+            if (xScore > yScore) {
+                case (((x, y), v)) => x <= xSplit
+            }
+            else {
+                case (((x, y), v)) => y <= ySplit
+            }
 
         val (part1, part2) = collection.partition(filterFunc)
 
@@ -134,7 +173,7 @@ object TwoDimensionalTree {
         val scores = cumulative.map {
             case (x, partialSum) =>
                 val fraction = partialSum.toDouble / sum
-                (x, .5-math.abs(fraction - .5))
+                (x,.5 - math.abs(fraction - .5))
         }
 
         scores.max(Ordering[Double].on[(Int, Double)](_._2))

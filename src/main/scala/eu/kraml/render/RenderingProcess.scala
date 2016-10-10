@@ -8,7 +8,7 @@ import eu.kraml.Constants._
 import eu.kraml.Main.EventMonitor
 import eu.kraml.io.TileCache
 import eu.kraml.model.{PointStyle, Record, RenderConfig}
-import eu.kraml.render.RenderingProcess.{findZoom, mostRecent}
+import eu.kraml.render.RenderingProcess.{findZoom, logWallTime, mostRecent}
 
 import scala.collection.mutable
 
@@ -46,7 +46,11 @@ class RenderingProcess(val cache: TileCache, val mainConfigModificationDate: Ins
                 canvas.addRenderer(renderer, filteredRecords)
         }
 
-        Image.fromAwt(canvas.render).output(outfile)
+        val image = logWallTime(
+            () => canvas.render
+        )
+
+        Image.fromAwt(image).output(outfile)
     }
 }
 
@@ -75,5 +79,14 @@ private[render] object RenderingProcess {
         val sortedCandidates = candidates.sortBy {case (zoom, error) => math.pow(error, 2)} // quadratic error
 
         sortedCandidates.head._1
+    }
+
+    private def logWallTime[R](function: () => R)
+                              (implicit monitor: EventMonitor): R = {
+        val startTime = System.currentTimeMillis()
+        val returnValue = function()
+        val endTime = System.currentTimeMillis()
+        monitor.printMessage("Elapsed time: " + (endTime-startTime) + " ms")
+        returnValue
     }
 }

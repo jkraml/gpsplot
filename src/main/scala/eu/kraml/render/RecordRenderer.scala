@@ -6,6 +6,7 @@ import java.awt.image.BufferedImage
 
 import eu.kraml.Main.EventMonitor
 import eu.kraml.model.{Circle, HeatMap, PointStyle, Record}
+import eu.kraml.render.heatmap._
 
 private[render] trait RecordRenderer {
     def render(overlay: BufferedImage, coordinateConverter: CoordinateConverter, records: List[Record])
@@ -41,7 +42,7 @@ private[render] object RecordRenderer {
     def getRenderer(style: PointStyle): RecordRenderer =
         style match {
             case Circle(d, c) => new CircleRenderer(d, c.toAWT)
-            case HeatMap() => new HeatMapRenderer()
+            case HeatMap() => new TiledRenderer(DefaultStyle)
             case _ => throw new IllegalArgumentException(s"unknown point style $style")
         }
 }
