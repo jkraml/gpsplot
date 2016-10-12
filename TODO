@@ -1,0 +1,5 @@
+multithreaded rendering (render and assemble parts of overlay)
+multithreading hint from config indicating level of parallelity (# of thread mostly)
+graceful handling of missing files/dirs
+even nice output with percentages
+some output msgs are still ugly
