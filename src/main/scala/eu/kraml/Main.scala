@@ -75,6 +75,7 @@ object Main {
 
     private def readRenderConfigs(configDir: File)
                                  (implicit monitor: EventMonitor): Map[String, (RenderConfig, Instant)] = {
+        //TODO gracefully exit if configDir does not exist
         configDir.listFiles
             .filter(f => f.isFile && f.getName.endsWith(".xml"))
             .flatMap( f => {
