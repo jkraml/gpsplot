@@ -65,7 +65,7 @@ class TiledRenderer(private val pixelStyle: PixelStyle) extends RecordRenderer {
     }
 }
 
-private object TiledRenderer {
+object TiledRenderer {
     private val tileSize = 50
 
     trait PixelStyle {
